@@ -1,0 +1,85 @@
+version: '3.1'
+services:
+
+ lb:
+  image: dockercloud/haproxy
+  ports:
+  - 80:80
+  - 443:443
+  links:
+  - web
+  networks:
+  - nw
+  volumes:
+  - /var/run/docker.sock:/var/run/docker.sock
+
+ web:
+  restart: always
+  build: .
+  ports:
+  - 80
+  - 443
+  volumes:
+  - ./website:/www
+  - ./nginx.conf:/etc/nginx/conf.d/default.conf
+  depends_on:
+  - php
+  - db
+  networks:
+  - nw
+  links:
+  - php
+
+ php:
+  build: ./php7.1/
+  restart: always
+  volumes:
+  - ./website:/www
+  links:
+  - db
+  networks:
+  - nw
+  environment:
+   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+   MYSQL_DATABASE: ${MYSQL_DATABASE}
+   MYSQL_USER: ${MYSQL_USER}
+   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+ db:
+  image: mariadb:latest
+  restart: always
+  volumes:
+  - ./mysql:/var/lib/mysql
+  environment:
+   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+   MYSQL_DATABASE: ${MYSQL_DATABASE}
+   MYSQL_USER: ${MYSQL_USER}
+   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  networks:
+  - nw
+
+ redis:
+  image: redis
+  restart: always
+  networks:
+  - nw
+  ports:
+  - 6379:6379
+
+ dbadmin:
+  image: phpmyadmin/phpmyadmin
+  restart: always
+  ports:
+  - 8080:80
+  networks:
+  - nw
+
+networks:
+ nw:
+  driver: bridge
+
+
+
+
+
+
